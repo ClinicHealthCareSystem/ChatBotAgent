@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.chatbot.tools import agent_executor
+from app.chatbot.agent_gpt.tools import agent_executor
 from app.schemas.agent_input_schemas import InputModel
 
 router = APIRouter()

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api import agent
+from app.api.agent_llama.agent_llama import router  
 
 app = FastAPI(title="API")
 
@@ -7,4 +7,4 @@ app = FastAPI(title="API")
 def read_root():
     return {"message": "Hello World"}
 
-app.include_router(agent.router, prefix="/api/bot", tags=["Bot"])
+app.include_router(router, prefix="/api/bot", tags=["Bot"])
