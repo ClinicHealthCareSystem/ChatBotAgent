@@ -1,14 +1,12 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
-from app.chatbot.agent_llama.tools_llama import agent_executor
+from app.chatbot.agent_llama.tools_llama import responseLLM
+from app.schemas.agent_input_schemas import InputModel
 
-router = APIRouter()  
+router = APIRouter()
 
-class InputModel(BaseModel):
-    input: str
 
 @router.post("/agent_llama")
 def response_agent_bot(data: InputModel):
     input_text = data.input
-    response = agent_executor.invoke({"input": input_text, "chat_history":[]})
+    response = responseLLM(input_text)
     return {"Resposta do agent": response}
