@@ -9,4 +9,5 @@ router = APIRouter()
 def response_agent_bot(data: InputModel):
     input_text = data.input
     response = responseLLM(input_text)
-    return {"Resposta do agent": response}
+    final_response = {"Resposta do agent": str(response)}
+    return final_response
