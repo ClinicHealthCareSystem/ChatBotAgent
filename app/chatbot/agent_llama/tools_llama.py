@@ -1,8 +1,9 @@
 import os
 from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
-from transformers import ReactCodeAgent, HfEngine
-from tools import SQLExecutorTool
+from transformers import ReactCodeAgent
+from transformers import HfEngine
+from .tools_llama import SQLexecutorTool
 
 
 load_dotenv()
