@@ -3,8 +3,8 @@ from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
 from transformers import ReactCodeAgent
 from transformers import HfEngine
-from .tools_llama import SQLexecutorTool
-
+# from .tools_llama import SQLexecutorTool
+from .tools_llama import  ConsultasTool, ExamesTool, AgendamentosTool
 
 load_dotenv()
 token = os.getenv("HF_API_TOKEN")
