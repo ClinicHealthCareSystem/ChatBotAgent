@@ -34,37 +34,37 @@
 #           except Exception as e:
 #             return f"Erro ao executar consulta: {str(e)}"
 
-from transformers.agents import Tool
-from llama_conect_database_tools import executar_query
+# from transformers.agents import Tool
+# from llama_conect_database_tools import executar_query
 
-class ConsultasTool(Tool):
-    name =""
-    descrption = ""
-    inputs ={"nome_paciente": {"type": "text", "description": "Nome do paciente"}}
-    output_type= "text"
+# class ConsultasTool(Tool):
+#     name =""
+#     descrption = ""
+#     inputs ={"nome_paciente": {"type": "text", "description": "Nome do paciente"}}
+#     output_type= "text"
 
-    def buscar(self, nome_paciente: str):
-        query = "COmando SQL"
-        return executar_query(query)
+#     def buscar(self, nome_paciente: str):
+#         query = "COmando SQL"
+#         return executar_query(query)
     
 
-class ExameTool(Tool):
-    name =""
-    descrption = ""
-    inputs ={"tipo_exame": {"type": "text", "description": "Tipo de enxame"}}
-    output_type= "text"
+# class ExameTool(Tool):
+#     name =""
+#     descrption = ""
+#     inputs ={"tipo_exame": {"type": "text", "description": "Tipo de enxame"}}
+#     output_type= "text"
 
-    def buscar(self, tipo_exame: str):
-        query = "COmando SQL"
-        return executar_query(query)
+#     def buscar(self, tipo_exame: str):
+#         query = "COmando SQL"
+#         return executar_query(query)
     
 
-class AgendamentoTool(Tool):
-    name =""
-    descrption = ""
-    inputs ={"nome_paciente": {"type": "text", "description": "Nome do paciente"}}
-    output_type= "text"
+# class AgendamentoTool(Tool):
+#     name =""
+#     descrption = ""
+#     inputs ={"nome_paciente": {"type": "text", "description": "Nome do paciente"}}
+#     output_type= "text"
 
-    def buscar(self, nome_paciente: str):
-        query = "COmando SQL"
-        return executar_query(query)
+#     def buscar(self, nome_paciente: str):
+#         query = "COmando SQL"
+#         return executar_query(query)

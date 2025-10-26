@@ -101,14 +101,12 @@ def dados_exames(texto: str) -> Dict:
     return dados
 
 def llm(prompt: str) -> str:
-    try:
-        resposta = client.chat.completion.create(
+    
+        resposta = client.chat.completions.create(
             messages=[
                  {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ]
         )
         return resposta.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"Erro ao chamar LLm: {e}")
-        return "Desculpe, tive um problema. Pode tentar novemente"
+    
