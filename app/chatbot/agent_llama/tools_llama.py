@@ -1,79 +1,114 @@
 import os
 from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
-from transformers import ReactCodeAgent
-from transformers import HfEngine
-# from .tools_llama import SQLexecutorTool
-from .tools_llama import  ConsultasTool, ExamesTool, AgendamentosTool
+import json
+import re
+from typing import Dict, Any, Optional
 
 load_dotenv()
 token = os.getenv("HF_API_TOKEN")
 
-
 client = InferenceClient(model="meta-llama/Llama-3.1-8B-Instruct", token=token)
 
 
-def menu_escolha():
-    return """
-    1. Consulta Médica
-    2. Exames
-    3. Visualizar Agendamentos
-    4. Dúvidas
-    """
+PACIENTE_ID = 1
 
+SYSTEM_PROMPT = """
+Você é um assisten virtual de uma clínica médica chamda Sáude Mania.
+Seu objetivo é ajudar pacientes de forma educada, clara e profissional em portugês do Brasil.
 
-def resposta_chatbot(prompt: str):
-    resposta = client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}]
-    )
-    texto = resposta.choices[0].message.content
-    return texto
+Faça perguntas claras e objetivas.
+"""
 
+def detectar_opcao_menu(texto: str) -> Optional[int]:
+    texto = texto.strip()
 
-def responseLLM(input: str):
-    opcao = input
-    response = atendimento_chatbot(opcao)
-    return response
+    if texto in ["1", "2", "3", "4"]:
+        return int(texto)
 
+    texto_lower = texto.lower()
+    if any(palavra in texto_lower for palavra in ["consulta", "agendar consulta","marcar consulta"]):
+        return 1
+    elif any(palavra in texto_lower for palavra in ["enxame", "agendar enxame","marcar enxame"]):
+        return 2
+    elif any(palavra in texto_lower for palavra in ["agendamento", "ver agendamentos","meus agendamentos"]):
+        return 3
+    elif any(palavra in texto_lower for palavra in ["dúvidas", "ajuda"]):
+        return 4
+    
+    return None
+    
+def dados_consuta(texto: str) -> Dict:
+    dados = {}
 
-def atendimento_chatbot(opcao: str):
-    match opcao:
-        case "1":
-            prompt = (
-                "Você é um assistente de clínica médica. "
-                "Ajude o paciente a agendar uma consulta de forma clara e educada."
-            )
+    especialidade ={
+        "clínico geral": ["clínico", "clinico", "geral", "clínica geral"],
+        "pediatria": ["pediatr", "criança", "crianca", "infantil"],
+        "geriatria": ["geriatra", "geriatri", "velho", "idoso","geriatr"]
+    }
+    texto_lower = texto.lower()
+    for espec, palavras in especialidade.items():
+        if any(p in texto_lower for p in palavras):
+            dados["especialidades"] = espec
+            break
+    
+    match_data = re.search(r'(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?', texto)
+    if match_data:
+        dia, mes, ano = match_data.groups()
+        ano = ano or "2025"
+        dados["data"] = f"{ano}-{mes.zfill(2)}-{dia.zfill(2)}"
 
-            return resposta_chatbot(prompt)
-        case "2":
-            prompt = (
-                "Você é um assistente de clinica médica. "
-                "Ajude o paciente a solicitar exames, explicando o processo de forma clara."
-            )
-            return resposta_chatbot(prompt)
-        case "3":
-            prompt = "Aqui estão os agendamentos cadastrados para o paciente:"
-            return resposta_chatbot(prompt)
-        case "4":
-            prompt = (
-                "Você é um assistente de clínica médica. "
-                "Responda as dúvidas do paciente de forma clara, educada e profissional. "
-                "Não forneça diagnósticos, apenas orientações gerais."
-            )
-            return resposta_chatbot(prompt)
-        case __:
-            return (
-                "Opção inválida. Por favor, escolha uma das opções abaixo:"
-                + menu_escolha()
-            )
+    match_hora = re.search(r'(\d{1,2})[h:](\d{2})?', texto)
+    if match_hora:
+        hora = match_hora.group(1).zfill(2)
+        minuto = match_hora.group(2) or "00"
+        dados["hora"] = f"{hora}:{minuto}"
+    
+    if any(palavra in texto_lower for palavra in ["sim",  "confirmar", "ok", "correto", "isso", "confirmo"]):
+        dados["confirmado"] = True
 
+    return dados
 
-# if __name__ == "__main__":
-#     while True:
-#         print(menu_escolha())
-#         opcao = input("Digite a opcao desejada ")
-#         if opcao.lower() == "sair":
-#             print("Encerrando o antendimento")
-#             break
-#         resposta = atendimento_chatbot(opcao)
-#         print("Chatbot:", resposta)
+def dados_exames(texto: str) -> Dict:
+    dados = {}
+
+    tipos_enxames ={
+        "hemograma completo": ["hemograma","enxame de sangue", "sangue completo"],
+        "raio x": ["raio-x", "raio x", "rx"],
+    }
+
+    texto_lower = texto.lower()
+    for espec, palavras in tipos_enxames.items():
+        if any(p in texto_lower for p in palavras):
+            dados["tipos_enxames"] = espec
+            break
+
+    match_data = re.search(r'(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?', texto)
+    if match_data:
+        dia, mes, ano = match_data.groups()
+        ano = ano or "2025"
+        dados["data"] = f"{ano}-{mes.zfill(2)}-{dia.zfill(2)}"
+
+    match_hora = re.search(r'(\d{1,2})[h:](\d{2})?', texto)
+    if match_hora:
+        hora = match_hora.group(1).zfill(2)
+        minuto = match_hora.group(2) or "80"
+        dados["hora"] = f"{hora}:{minuto}"
+    
+    if any(palavra in texto_lower for palavra in ["sim",  "confirmar", "ok", "correto", "isso", "confirmo"]):
+        dados["confirmado"] = True
+
+    return dados
+
+def llm(prompt: str) -> str:
+    try:
+        resposta = client.chat.completion.create(
+            messages=[
+                 {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return resposta.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Erro ao chamar LLm: {e}")
+        return "Desculpe, tive um problema. Pode tentar novemente"
