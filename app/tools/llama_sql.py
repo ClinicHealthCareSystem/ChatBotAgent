@@ -68,3 +68,28 @@
 #     def buscar(self, nome_paciente: str):
 #         query = "COmando SQL"
 #         return executar_query(query)
+import sqlite3
+from typing import List, Dict, Any
+from datetime import datetime
+import json
+
+class DatabaseConnection:
+    def __init__(self, dp_path: str ="ClinicHealthCareSystemDB.db"):
+        self.conn = psycopg2.connect(
+            host="localhost:5432",
+            database="ClinicHealthCareSystemDB",
+            user="",
+            password=""
+        )
+        self.dp_path = dp_path
+        self.conn = None
+    
+    def connect(self):
+        if self.conn is None:
+            self.conn = sqlite3.connect(self.db_path)
+            self.conn.row_factory = sqlite3.Row
+        return self.conn
+    def close(self):
+        if self.conn:
+            self.conn.close()
+            self.conn = None        
