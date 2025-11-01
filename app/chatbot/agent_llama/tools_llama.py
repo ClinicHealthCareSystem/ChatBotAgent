@@ -38,7 +38,7 @@ def detectar_opcao_menu(texto: str) -> Optional[int]:
     
     return None
     
-def dados_consuta(texto: str) -> Dict:
+def dados_consulta(texto: str) -> Dict:
     dados = {}
 
     especialidade ={
@@ -109,4 +109,123 @@ def llm(prompt: str) -> str:
             ]
         )
         return resposta.choices[0].message.content.strip()
+
+############
+def consulta(user_input: str, contexto: Dict) -> tuple[str, Dict]:
+    
+    dados = dados_consulta(user_input, contexto)
+    contexto["dados"] = dados
+
+    falta_especialidade = "especialidade" not in dados
+    falta_data = "data" not in dados
+    falta_hora = "hora" not in dados
+
+    if falta_especialidade:
+        prompt = f"""O usuário quer agendar uma consulta e disse: "{user_input}"
+
+    Pergunte qual especialidade médica ele precisa de forma natural e amigável.
+    Mencione algumas opções como: cardiologia, dermatologia, clínico geral, pediatria, ortopedia."""
+        resposta = llm(prompt)
+        contexto["etapa"] = "coletantado_especialidade"
+        return resposta, contexto
+    elif falta_data:
+        prompt: f"""O usuário quer agendar consulta de {dados['especialidade']} e disse: "{user_input}"
+
+Pergunte que data ele prefere, de forma natural. Sugira que informe no formato DD/MM/AAAA."""
+        
+        resposta = llm(prompt)
+        contexto["etapa"] = "coeltando_data"
+        return resposta, contexto
+    elif falta_hora:
+        resultado_tool = consultas_tool(
+            acao="buscar_disponiveis",
+            paciente_id=1,
+            especilidade=dados["especialidade"],
+            data=dados["data"]
+        )
+        contexto["etapa"] = "coletando_hora"
+        return resultado_tool, contexto
+    
+    else:
+        if dados.get("confirmado"):
+            resultado_tool = consultas_tool(
+                acao="agendar",
+                paciente_id=1,
+                especialidade=dados["especialidade"],
+                data=dados["data"],
+                hora=dados["hora"]                        
+                )
+
+                contexto["etapa"] = "concluido"
+                contexto["dados"] = {}
+                return resultado_tool, contexto
+        else:
+            from datetime import datetime
+            data_formada = datetime.strptime(dados["data"], "%Y-%m-%d").strftime("%d/%m/%Y")
+
+            confirmacao = f""" Vou confirmar os dados: 
+            📋 **Sua consulta:**
+            • Especialidade: {dados['especialidade'].title()}
+            • Data: {data_formatada}
+            • Horário: {dados['hora']}
+
+            Posso confirmar o agendamento? (Digite "sim" para confirmar)
+            """
+                contexto["etapa"] = "confirmado"
+                return confirmacao, contexto
+      ##################################################  
+def enxame(user_input: str, contexto: Dict) -> tuple[str, Dict]:
+    
+    dados = dados_exames(user_input, contexto)
+    contexto["dados"] = dados
+
+    
+    falta_tipo = "tipo_enxame" not in dados
+    falta_data = "data" not in dados
+
+    if falta_tipo:
+        
+        resposta_tool = exames_tool(
+            acao="tipos_disponiveis",
+            paciente_id=1
+        )
+        contexto["etapa"] = "coletando_tipo"
+        return resultado_tool + "\n\nQual exame você precisa fazer?", contexto
+    
+    elif falta_data:
+        prompt: f"""O usuário quer agendar enxame de {dados['especialidade']} e disse: "{user_input}"
+
+Pergunte que data ele prefere, de forma natural. Sugira que informe no formato DD/MM/AAAA."""
+        
+        resposta = llm(prompt)
+        contexto["etapa"] = "coeltando_data"
+        return resposta, contexto
+    else:
+
+        if dados.get("confirmado"):
+            resultado_tool = consultas_tool(
+                acao="agendar",
+                paciente_id=1,
+                especialidade=dados["tipo_enxame"],
+                data=dados["data"],
+                                       
+                )
+
+                contexto["etapa"] = "concluido"
+                contexto["dados"] = {}
+                return resultado_tool, contexto
+        else:
+            from datetime import datetime
+            data_formada = datetime.strptime(dados["data"], "%Y-%m-%d").strftime("%d/%m/%Y")
+
+            confirmacao = f"""Vou confirmar os dados:
+            🩺 **Resumo do exame:**
+            • Tipo: {dados['tipo_exame'].title()}
+            • Data: {data_formatada}
+            Posso confirmar? (Digite "sim")"""
+
+                contexto["etapa"] = "confirmando"
+                return confirmacao, contexto
+
+
     
