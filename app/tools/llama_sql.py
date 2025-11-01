@@ -74,10 +74,10 @@ from datetime import datetime
 import json
 
 class DatabaseConnection:
-    def __init__(self, dp_path: str ="ClinicHealthCareSystemDB.db"):
+    def __init__(self, dp_path: str =""):
         self.conn = psycopg2.connect(
-            host="localhost:5432",
-            database="ClinicHealthCareSystemDB",
+            host="",
+            database="",
             user="",
             password=""
         )
@@ -92,4 +92,30 @@ class DatabaseConnection:
     def close(self):
         if self.conn:
             self.conn.close()
-            self.conn = None        
+            self.conn = None  
+
+    def execute_query(self, query: str, params: tuple = ()) -> List[Dict]:
+
+         conn = self.connect()
+         cursor = conn.cursor()
+         cursor.execute(query, params)
+
+         columns = [description[0] for description in cursor.description ]
+         results = []
+         for row in cursor.fetchall():
+             results.append(dict(zip(columns, row)))
+         return results      
+
+    def execute_inset(self, quey: str, params: tuple  =()) -> int:
+
+         conn = self.connect()
+         cursor = conn.cursor()
+         cursor.execute(quey, params)
+         conn.commit()
+         return cursor.lastrowid
+    
+db= DatabaseConnection()
+
+        
+
+   
