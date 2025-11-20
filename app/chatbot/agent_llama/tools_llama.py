@@ -250,17 +250,32 @@ async def chat_endpoint(data: Message):
     try:
         if msg == "1":
             async with httpx.AsyncClient() as client:
-                especiallidades_respt = await client.get(
+                especiallidades_resp = await client.get(
                     f"{NEST_BASE_URL} /api/data/especilidades"
                 )
                 unidades_resp = await client.get(
                     f"{NEST_BASE_URL}/api/data/unidades",
                     
                 )
-                 convenios_resp = await client.get(
+                convenios_resp = await client.get(
                     f"{NEST_BASE_URL}/api/data/convenios",
                     
                 )
+
+                if especiallidades_resp.status_code == 200 and unidades_resp.status_code == 200 and convenios_resp.status_code == 200:
+                    especiallidades = especiallidades_resp()
+                    unidades = unidades_resp()
+                    convenios = convenios_resp()
+
+                    prompt = f"Você é um assistente de clínica médica."
+
+                    resposta = resposta_chatbot(prompt)
+                    return {"reply": resposta}
+                else:
+                    return {"reply": resposta}
+    except httpx.RequestError as e:
+        print(f"Erro de conexão com backend: {e}")
+        return {"reply": "Erro ao conectar com o servidor"}            
                 
 
 
