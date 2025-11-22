@@ -68,53 +68,53 @@
 #     def buscar(self, nome_paciente: str):
 #         query = "COmando SQL"
 #         return executar_query(query)
-import sqlite3
-from typing import List, Dict, Any
-from datetime import datetime
-import json
+# import sqlite3
+# from typing import List, Dict, Any
+# from datetime import datetime
+# import json
 
-class DatabaseConnection:
-    def __init__(self, dp_path: str =""):
-        self.conn = psycopg2.connect(
-            host="",
-            database="",
-            user="",
-            password=""
-        )
-        self.dp_path = dp_path
-        self.conn = None
+# class DatabaseConnection:
+#     def __init__(self, dp_path: str =""):
+#         self.conn = psycopg2.connect(
+#             host="",
+#             database="",
+#             user="",
+#             password=""
+#         )
+#         self.dp_path = dp_path
+#         self.conn = None
     
-    def connect(self):
-        if self.conn is None:
-            self.conn = sqlite3.connect(self.db_path)
-            self.conn.row_factory = sqlite3.Row
-        return self.conn
-    def close(self):
-        if self.conn:
-            self.conn.close()
-            self.conn = None  
+#     def connect(self):
+#         if self.conn is None:
+#             self.conn = sqlite3.connect(self.db_path)
+#             self.conn.row_factory = sqlite3.Row
+#         return self.conn
+#     def close(self):
+#         if self.conn:
+#             self.conn.close()
+#             self.conn = None  
 
-    def execute_query(self, query: str, params: tuple = ()) -> List[Dict]:
+#     def execute_query(self, query: str, params: tuple = ()) -> List[Dict]:
 
-         conn = self.connect()
-         cursor = conn.cursor()
-         cursor.execute(query, params)
+#          conn = self.connect()
+#          cursor = conn.cursor()
+#          cursor.execute(query, params)
 
-         columns = [description[0] for description in cursor.description ]
-         results = []
-         for row in cursor.fetchall():
-             results.append(dict(zip(columns, row)))
-         return results      
+#          columns = [description[0] for description in cursor.description ]
+#          results = []
+#          for row in cursor.fetchall():
+#              results.append(dict(zip(columns, row)))
+#          return results      
 
-    def execute_inset(self, quey: str, params: tuple  =()) -> int:
+#     def execute_inset(self, quey: str, params: tuple  =()) -> int:
 
-         conn = self.connect()
-         cursor = conn.cursor()
-         cursor.execute(quey, params)
-         conn.commit()
-         return cursor.lastrowid
+#          conn = self.connect()
+#          cursor = conn.cursor()
+#          cursor.execute(quey, params)
+#          conn.commit()
+#          return cursor.lastrowid
     
-db= DatabaseConnection()
+# db= DatabaseConnection()
 
         
 

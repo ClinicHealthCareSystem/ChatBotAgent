@@ -226,57 +226,164 @@
 
 #                 contexto["etapa"] = "confirmando"
 #                 return confirmacao, contexto
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-import httpx
+
+
+# from fastapi import APIRouter, HTTPException
+# from pydantic import BaseModel
+# import httpx
+# import os
+# from dotenv import load_dotenv
+# from app.chatbot.agent_llama.tools_llama import resposta_chatbot
+
+# load_dotenv()
+# # conectar com o banco para puxar os dados
+# router = APIRouter()
+# NEST_BASE_URL = os.getenv("NEST_BASE_URL", "http://127.0.0.1:3000")
+
+# class Message(BaseModel):
+#     message: str 
+#     id: str |  None = None
+
+# @router.post("/fas_agent_llama")
+# async def chat_endpoint(data: Message):
+#     msg = data.message.strip()
+#     id = data.user.id
+
+#     try:
+#         if msg == "1":
+#             async with httpx.AsyncClient() as client:
+#                 especialidades_resp = await client.get(
+#                     f"{NEST_BASE_URL} /api/data/especilidades"
+#                 )
+#                 unidades_resp = await client.get(
+#                     f"{NEST_BASE_URL}/api/data/unidades",
+                    
+#                 )
+#                 convenios_resp = await client.get(
+#                     f"{NEST_BASE_URL}/api/data/convenios",
+                    
+#                 )
+
+#                 if especialidades_resp.status_code == 200 and unidades_resp.status_code == 200:
+#                     especialidades = especialidades_resp()
+#                     unidades = unidades_resp()
+
+#                     prompt = f"""Você é um assistente de clínica médica.
+#                     Especialidades disponíveis:
+#                     {chr(10).join([f"- {e['nome']}: {e['descricao']}" for e in especialidades])}
+#                     Unidades Disponíves:
+#                     {chr(10).join([f"-{u['nome']}" for u in unidades])}
+#                     Ajude o paciente a aagendar um consulta. Liste as especialidades de forma clara
+#                     e pergunte qual especialidade ele deseja, em qual unidade prefere ser atendido.
+#                     Seja obejtivo e amigável"""
+
+#                     resposta = resposta_chatbot(prompt)
+#                     return {"reply": resposta}
+#                 else:
+#                     return {"reply": resposta}
+#         elif msg == "2":
+#             async with httpx.AsyncClient() as client:
+#                 exames_resp = await client.get(
+#                     f"{NEST_BASE_URL}/api/data/tipos-enxames",
+                    
+#                 )
+#                 unidades_resp = await client.get(
+#                     f"{NEST_BASE_URL}/api/unidades",
+#                 )
+#                 if exames_resp.status_code == 200 and unidades_resp.status_code == 200:
+#                     exames = exames_resp.json()
+#                     unidades = unidades_resp.json()
+
+#                     categorias = {}
+#                     for exame in exames:
+#                         cat = exame.get('categoria', 'Outros')
+#                         if cat not in categorias:
+#                             categorias[cat] = []
+#                         categorias[cat].append(exame['nome'])
+#                     exames_formatados = "\n".join([
+#                         f"{cat}: {', '.join(nomes)}" for cat, nomes in categorias.items()
+#                     ])
+#             prompt = f"""Você é um assistente de clínica médica.
+
+# Exames disponíveis por categoria:
+# {exames_formatados}
+
+# Unidades disponíveis:
+# {chr(10).join([f"- {u['nome']}" for u in unidades])}
+
+
+
+# Ajude o paciente a solicitar exames. Explique de forma clara os tipos de exames disponíveis
+# e pergunte qual exame ele precisa fazer, em qual unidade e qual convênio possui.
+# Seja objetivo e amigável."""
+#     except httpx.RequestError as e:
+#         print(f"Erro de conexão com backend: {e}")
+#         return {"reply": "Erro ao conectar com o servidor"}            
+                
 import os
+from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
-from app.chatbot.agent_llama.tools_llama import resposta_chatbot
+
 
 load_dotenv()
-# conectar com o banco para puxar os dados
-router = APIRouter()
-NEST_BASE_URL = os.getenv("NEST_BASE_URL", "http://127.0.0.1:3000")
+token = os.getenv("HF_API_TOKEN")
 
-class Message(BaseModel):
-    message: str 
-    id: str |  None = None
 
-@router.post("/fas_agent_llama")
-async def chat_endpoint(data: Message):
-    msg = data.message.strip()
-    id = data.user.id
+client = InferenceClient(model="meta-llama/Llama-3.1-8B-Instruct", token=token)
 
-    try:
-        if msg == "1":
-            async with httpx.AsyncClient() as client:
-                especiallidades_resp = await client.get(
-                    f"{NEST_BASE_URL} /api/data/especilidades"
-                )
-                unidades_resp = await client.get(
-                    f"{NEST_BASE_URL}/api/data/unidades",
-                    
-                )
-                convenios_resp = await client.get(
-                    f"{NEST_BASE_URL}/api/data/convenios",
-                    
-                )
 
-                if especiallidades_resp.status_code == 200 and unidades_resp.status_code == 200 and convenios_resp.status_code == 200:
-                    especiallidades = especiallidades_resp()
-                    unidades = unidades_resp()
-                    convenios = convenios_resp()
+def menu_escolha():
+    return """
+    1. Consulta Médica
+    2. Exames
+    3. Visualizar Agendamentos
+    4. Dúvidas
+    """
 
-                    prompt = f"Você é um assistente de clínica médica."
 
-                    resposta = resposta_chatbot(prompt)
-                    return {"reply": resposta}
-                else:
-                    return {"reply": resposta}
-    except httpx.RequestError as e:
-        print(f"Erro de conexão com backend: {e}")
-        return {"reply": "Erro ao conectar com o servidor"}            
-                
+def resposta_chatbot(prompt: str):
+    resposta = client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}]
+    )
+    texto = resposta.choices[0].message.content
+    return texto
 
+
+def responseLLM(input: str):
+    opcao = input
+    response = atendimento_chatbot(opcao)
+    return response
+
+
+def atendimento_chatbot(opcao: str):
+    match opcao:
+        case "1":
+            prompt = (
+                "Você é um assistente de clínica médica. "
+                "Ajude o paciente a agendar uma consulta de forma clara e educada."
+            )
+
+            return resposta_chatbot(prompt)
+        case "2":
+            prompt = (
+                "Você é um assistente de clinica médica. "
+                "Ajude o paciente a solicitar exames, explicando o processo de forma clara."
+            )
+            return resposta_chatbot(prompt)
+        case "3":
+            prompt = "Aqui estão os agendamentos cadastrados para o paciente:"
+            return resposta_chatbot(prompt)
+        case "4":
+            prompt = (
+                "Você é um assistente de clínica médica. "
+                "Responda as dúvidas do paciente de forma clara, educada e profissional. "
+                "Não forneça diagnósticos, apenas orientações gerais."
+            )
+            return resposta_chatbot(prompt)
+        case __:
+            return (
+                "Opção inválida. Por favor, escolha uma das opções abaixo:"
+                + menu_escolha()
+            )
 
     
